@@ -1,43 +1,46 @@
-from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 
 from PIL import Image as Im
 
+from .manager import UserCustomManager
+
 # Create your models here.
-class Participant(models.Model):
+class User(AbstractUser):
     
     class Gender(models.TextChoices):
-        MEN = 'M', _('Men')
-        WOMEN = 'W', _('Women')
+        MEN = 'M', _('Мужчина')
+        WOMEN = 'W', _('Женчина')
         
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    
     first_name = models.CharField(
         max_length=100, 
         null=False,
         blank=False,
+        verbose_name='Имя',
         help_text="Введите ваше имя")
     
     last_name = models.CharField(
         max_length=100, 
         null=False,
         blank=False,
+        verbose_name='Фамилия',
         help_text="Введите вашу фамилию")
     
     avatar = models.ImageField(
-        upload_to='avatars', 
-        default='avatars/default.jpg',
+        upload_to='images/users/avatars', 
+        default='images/users/avatars/default.jpg',
         null=False,
         blank=False,
+        verbose_name='Аватар',
         help_text="Загрузите фотографию с вами")
     
     email = models.EmailField(
-        verbose_name='email address',
         max_length=255,
         unique=True,
         null=False,
         blank=False,
+        verbose_name='Адрес электронной почты',
         help_text="Введите вашу почту")
     
     gender = models.CharField(
@@ -55,12 +58,23 @@ class Participant(models.Model):
     date_joined = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+    
+    objects = UserCustomManager()
+    
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+        
+        
     def __str__(self) -> str:
         return f'{self.first_name} {self.last_name}'
     
     def save(self): 
         super().save()
         img = Im.open(self.avatar.path)
+        
         # уменьшить фотографию
         if img.height > 300 or img.width > 300:
             output_size = (300,300)

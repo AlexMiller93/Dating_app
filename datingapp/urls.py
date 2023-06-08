@@ -20,5 +20,13 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('datingapp.apps.authentication.urls'))
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('', include('api.urls')),
+    path('', include('authentication.urls')),
+] 
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT)
+
+urlpatterns += static(settings.STATIC_URL,
+        document_root=settings.STATIC_ROOT)
