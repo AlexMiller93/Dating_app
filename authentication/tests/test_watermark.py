@@ -38,6 +38,6 @@ def watermark_photo(input_image_path,
 	card.save("test.png", format="png")
 	'''
 	if __name__ == '__main__':
-	img = 'media/images/users/avatars/default.jpg'
-	watermark_photo(img, 'media/images/users/avatars/default_wm.jpg',
-			'media/watermark/watermark.png', position=(0,0))
+		img = 'media/images/users/avatars/default.jpg'
+		watermark_photo(img, 'media/images/users/avatars/default_wm.jpg',
+				'media/watermark/watermark.png', position=(0,0))
