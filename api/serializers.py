@@ -35,7 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
         return avatar
 
 class UserListSerializer(serializers.ModelSerializer):
-    distance = serializers.SerializerMethodField()
+    distance = serializers.IntegerField()
 
     class Meta:
         model = User
