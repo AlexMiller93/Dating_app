@@ -59,5 +59,6 @@ class MatchTest(APITestCase):
         response = self.male_client.get(f'/api/list/?gender={self.female.gender}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.data.get('results')[0]
+        data.pop('distance')
         for key, value in data.items():
             self.assertEqual(getattr(self.female, key), value)

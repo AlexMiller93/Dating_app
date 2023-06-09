@@ -1,12 +1,11 @@
+from math import radians, sin, cos, acos
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from django.shortcuts import get_object_or_404
 
-from rest_framework import mixins, status, viewsets, serializers
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework import serializers
 
+from authentication.models import Geolocation
 from match.models import Match
 
 User = get_user_model()
@@ -36,10 +35,14 @@ class UserSerializer(serializers.ModelSerializer):
         return avatar
 
 class UserListSerializer(serializers.ModelSerializer):
+    distance = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'avatar', 'gender', 'first_name', 'last_name', 'email')
+        fields = ('id', 'avatar', 'gender', 'first_name', 'last_name', 'email', 'distance',)
+
+    def get_distance(self, obj):
+        return obj.distance
 
 class MatchSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(
@@ -78,3 +81,24 @@ class MatchSerializer(serializers.ModelSerializer):
             )
 
         return data
+
+
+class GeolocationSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        slug_field='email',
+        queryset=User.objects.all(),
+        default=serializers.CurrentUserDefault()
+    )
+
+    class Meta:
+        model = Geolocation
+        fields = ('user', 'latitude', 'longitude',)
+
+    def create(self, validated_data):
+        geolocation, created = Geolocation.objects.get_or_create(
+            user=validated_data['user']
+        )
+        geolocation.latitude = validated_data['latitude']
+        geolocation.longitude = validated_data['longitude']
+        geolocation.save()
+        return geolocation
