@@ -76,5 +76,5 @@ api/clients/create/
 	"password": "your_password",
 	"first_name": "first_name",
 	"last_name": "last_name",
-	"gender": "M" or "F"
+	"gender": "M" or "W"
 }
