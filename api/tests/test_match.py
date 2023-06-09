@@ -4,11 +4,13 @@ import tempfile
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import override_settings
+
 from faker import Faker
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .test_views import auth_client
 from match.models import Match
 
 User = get_user_model()
@@ -41,36 +43,47 @@ class MacthTest(APITestCase):
             password=faker.password(),
         )
 
-    def auth_client(self, user):
-        refresh = RefreshToken.for_user(user)
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
-        return client
+    def setUp(self) -> None:
+        self.male_client = auth_client(self.male)
+        self.female_client = auth_client(self.female)
 
-    def test_match_endpoint(self):
-        client_user = self.auth_client(self.male)
-        response = client_user.get(f'/api/clients/{self.female.id}/match/')
+    def test_match_not_auth_get(self):
+        response = self.client.get(f'/api/clients/{self.female.id}/match/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_match_not_auth_post(self):
+        response = self.client.post(f'/api/clients/{self.female.id}/match/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_match_not_auth_patch(self):
+        response = self.client.patch(f'/api/clients/{self.female.id}/match/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_match_auth(self):
+        response = self.male_client.get(f'/api/clients/{self.female.id}/match/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.data
         for key, value in data.items():
             self.assertEqual(getattr(self.female, key), value)
 
     def test_match_self(self):
-        client_user = self.auth_client(self.male)
-        response = client_user.post(f'/api/clients/{self.male.id}/match/', data=self.mark_false)
+        response = self.male_client.post(
+            f'/api/clients/{self.male.id}/match/', 
+            data=self.mark_false)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_retry_match(self):
-        client_user = self.auth_client(self.male)
-        response = client_user.post(f'/api/clients/{self.female.id}/match/', data=self.mark_false)
+        response = self.male_client.post(
+            f'/api/clients/{self.female.id}/match/',
+            data=self.mark_false)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = client_user.post(f'/api/clients/{self.female.id}/match/', data=self.mark_false)
+        response = self.male_client.post(
+            f'/api/clients/{self.female.id}/match/', 
+            data=self.mark_false)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_matches(self):
-        client_male = self.auth_client(self.male)
-        client_female = self.auth_client(self.female)
-        response = client_male.post(
+        response = self.male_client.post(
             f'/api/clients/{self.female.id}/match/', data=self.mark_true
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -78,7 +91,7 @@ class MacthTest(APITestCase):
             Match.objects.filter(user=self.male, matching=self.female, mark=True).exists()
         )
 
-        response = client_female.post(
+        response = self.female_client.post(
             f'/api/clients/{self.male.id}/match/', data=self.mark_true
         )
         self.assertTrue(

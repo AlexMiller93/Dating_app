@@ -35,6 +35,12 @@ class UserSerializer(serializers.ModelSerializer):
             )
         return avatar
 
+class UserListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('id', 'avatar', 'gender', 'first_name', 'last_name', 'email')
+
 class MatchSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(
         slug_field='email',
