@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 
 from PIL import Image as Im
+from PIL import ImageDraw, ImageFont
 
 from .manager import UserCustomManager
 
@@ -14,6 +15,7 @@ class User(AbstractUser):
         MEN = 'M', _('Мужчина')
         WOMEN = 'W', _('Женчина')
         
+    username = None
     first_name = models.CharField(
         max_length=100, 
         null=False,
@@ -85,9 +87,27 @@ class User(AbstractUser):
             
         if not self.avatar:
             return
-        
         width, height = img.size
+        
+        # водяной знак
         watermark = Im.open(settings.WATERMARK_PATH)
+        if watermark.height > 300 or watermark.width > 300:
+            output_size = (300,300)
+            watermark.thumbnail(output_size)
+        mark_width, mark_height = watermark.size
+        x = width - mark_width - settings.MARGIN
+        y = height - mark_height - settings.MARGIN
+        img.paste(watermark, (x, y))
+        img.show()
+        img.save(self.avatar.path)
+        
+        '''
+        width, height = img.size
+        
+        if watermark.height > 300 or watermark.width > 300:
+            output_size = (300,300)
+            watermark.thumbnail(output_size)
+            
         watermark.thumbnail(settings.WATERMARK_SIZE)
         mark_width, mark_height = watermark.size
         paste_mask = watermark.split()[3].point(
@@ -97,3 +117,7 @@ class User(AbstractUser):
         y = height - mark_height - settings.MARGIN
         img.paste(watermark, (x, y), mask=paste_mask)
         img.save(self.avatar.path)
+        '''
+        
+        
+        
